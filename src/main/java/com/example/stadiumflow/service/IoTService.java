@@ -52,7 +52,6 @@ public class IoTService {
     @Scheduled(fixedRate = 5000)
     public void simulateSensorDataAndSaveToDB() {
         List<Zone> zones = zoneRepository.findAll();
-        
         for (Zone zone : zones) {
             int time = random.nextInt(30);
             if (time == 0) time = 1;
@@ -60,10 +59,26 @@ public class IoTService {
             zoneRepository.save(zone); 
         }
 
-        List<Zone> updatedZones = zoneRepository.findAll();
+        broadcastData(zoneRepository.findAll());
+    }
+
+    // Adding a 15-second heartbeat to keep Cloud Run CPU active during idle times
+    @Scheduled(fixedRate = 15000)
+    public void sendHeartbeat() {
         for (SseEmitter emitter : emitters) {
             try {
-                emitter.send(updatedZones);
+                emitter.send(SseEmitter.event().name("ping").data("keep-alive"));
+            } catch (IOException e) {
+                emitter.complete();
+                emitters.remove(emitter);
+            }
+        }
+    }
+
+    private void broadcastData(Object data) {
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event().data(data));
             } catch (IOException e) {
                 emitter.complete();
                 emitters.remove(emitter);

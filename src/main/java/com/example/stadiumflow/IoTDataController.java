@@ -18,7 +18,7 @@ public class IoTDataController {
         this.ioTService = ioTService;
     }
 
-    @GetMapping("/stream")
+    @GetMapping(value = "/stream", produces = "text/event-stream")
     public SseEmitter streamIoTData(javax.servlet.http.HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("X-Accel-Buffering", "no"); // Disable proxy buffering for live stream
