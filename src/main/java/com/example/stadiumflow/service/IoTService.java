@@ -36,9 +36,16 @@ public class IoTService {
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
         this.emitters.add(emitter);
         
-        // IMMEDIATE FLUSH: Send current data to bypass Cloud Run/Nginx buffering
         try {
-            emitter.send(zoneRepository.findAll());
+            // "MAX OUT" CLOUD FLUSHING: Send a 2KB preamble of comments.
+            // Many proxies (Cloud Run, Nginx, etc.) buffer the first few KB of a stream.
+            // This padding forces an immediate flush so the fan gets data in < 1 second.
+            StringBuilder padding = new StringBuilder();
+            for (int i = 0; i < 2048; i++) padding.append(" ");
+            emitter.send(SseEmitter.event().comment(padding.toString()));
+            
+            // Immediate first data push
+            emitter.send(SseEmitter.event().data(zoneRepository.findAll()));
         } catch (IOException e) {
             emitter.complete();
             this.emitters.remove(emitter);
