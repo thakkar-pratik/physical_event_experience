@@ -24,4 +24,9 @@ public class IoTDataController {
         response.setHeader("X-Accel-Buffering", "no"); // Disable proxy buffering for live stream
         return ioTService.registerClient();
     }
+
+    @GetMapping("/data")
+    public java.util.List<com.example.stadiumflow.domain.Zone> getIoTData() {
+        return ioTService.getAllZones();
+    }
 }

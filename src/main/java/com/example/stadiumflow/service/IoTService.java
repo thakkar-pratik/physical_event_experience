@@ -38,14 +38,12 @@ public class IoTService {
         
         try {
             // "MAX OUT" CLOUD FLUSHING: Send a 2KB preamble of comments.
-            // Many proxies (Cloud Run, Nginx, etc.) buffer the first few KB of a stream.
-            // This padding forces an immediate flush so the fan gets data in < 1 second.
             StringBuilder padding = new StringBuilder();
             for (int i = 0; i < 2048; i++) padding.append(" ");
             emitter.send(SseEmitter.event().comment(padding.toString()));
             
             // Immediate first data push
-            emitter.send(SseEmitter.event().data(zoneRepository.findAll()));
+            emitter.send(SseEmitter.event().data(getAllZones()));
         } catch (IOException e) {
             emitter.complete();
             this.emitters.remove(emitter);
@@ -54,6 +52,10 @@ public class IoTService {
         emitter.onCompletion(() -> this.emitters.remove(emitter));
         emitter.onTimeout(() -> this.emitters.remove(emitter));
         return emitter;
+    }
+
+    public List<Zone> getAllZones() {
+        return zoneRepository.findAll();
     }
 
     @Scheduled(fixedRate = 5000)

@@ -87,9 +87,42 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // 5. LIVE TELEMETRY (SSE)
+    // 5. HYBRID LIVE TELEMETRY (SSE + POLLING FALLBACK)
+    let sseActive = false;
+    let fallbackInterval = null;
+
+    function startPollingFallback() {
+        if (fallbackInterval) return;
+        console.warn("⚠️ SSE Stream lagging/blocked. Switching to Hybrid Polling Failsafe...");
+        fallbackInterval = setInterval(async () => {
+            if (sseActive) {
+                console.log("🔄 SSE recovered. Stopping polling.");
+                clearInterval(fallbackInterval);
+                fallbackInterval = null;
+                return;
+            }
+            try {
+                const response = await fetch("/api/iot/data");
+                if (response.ok) {
+                    const data = await response.json();
+                    debouncedUpdates(data);
+                }
+            } catch (e) {
+                console.error("Polling failed", e);
+            }
+        }, 5000); // Poll every 5 seconds as a safety net
+    }
+
     const eventSource = new EventSource("/api/iot/stream");
-    eventSource.onopen = () => console.log("✅ Stream Connected!");
+    
+    // WATCHDOG: If no data in 7 seconds, start polling
+    const watchdog = setTimeout(() => {
+        if (!sseActive) startPollingFallback();
+    }, 7000);
+
+    eventSource.onopen = () => {
+        console.log("✅ Stream Connected!");
+    };
     
     const debouncedUpdates = debounce((data) => {
         updateHomeDashboard(data);
@@ -103,12 +136,22 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Network disconnected: Ignoring live SSE updates (Simulation)");
             return;
         }
+        
+        // Mark SSE as healthy
+        sseActive = true;
+        clearTimeout(watchdog);
+        
         try {
             const data = JSON.parse(event.data);
             debouncedUpdates(data);
         } catch (e) {
-            console.error("Failed to parse SSE data", e);
+            // Heartbeats and comments might fail JSON.parse, which is fine
         }
+    };
+
+    eventSource.onerror = () => {
+        console.warn("❌ SSE Stream Error. Triggering immediate polling fallback.");
+        startPollingFallback();
     };
 
     function updateHomeDashboard(zones) {
