@@ -25,11 +25,11 @@ public class IoTService {
 
     @PostConstruct
     public void seedDatabase() {
-        zoneRepository.save(new Zone("Gate_A", "Gate A", 5, 20));
-        zoneRepository.save(new Zone("Gate_C", "Gate C", 5, 20));
-        zoneRepository.save(new Zone("Section_112", "Section 112", 5, 20));
-        zoneRepository.save(new Zone("Section_120", "Section 120", 5, 20));
-        System.out.println("✅ JPA: Initialized 4 Stadium Zones in H2 Database.");
+        zoneRepository.save(new Zone("Gate_A", "North Stand Entrance (General)", 5, 20));
+        zoneRepository.save(new Zone("Gate_C", "VIP Turf Access (Yellow Zone)", 5, 20));
+        zoneRepository.save(new Zone("Section_112", "Food Village (East Concourse)", 5, 20));
+        zoneRepository.save(new Zone("Section_120", "Hydration Station 1 (West)", 5, 20));
+        System.out.println("✅ JPA: Initialized 4 Coldplay Stadium Zones in H2 Database.");
     }
 
     public SseEmitter registerClient() {

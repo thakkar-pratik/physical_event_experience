@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isOnline) {
             networkLabel.innerText = "5G Online";
             meshPromo.className = "promo-card";
-            meshPromo.innerHTML = "<h3>Game Day Update</h3><p>Welcome to Section 112. The network is strong, but BLE Mesh is on standby.</p>";
+            meshPromo.innerHTML = "<h3>Coldplay Experience Update</h3><p>Welcome to the North Stand. The 5G network is strong, but BLE Mesh is ready for the crowd peaks.</p>";
             checkoutBtn.className = "checkout-btn";
             checkoutBtn.innerText = "Checkout";
             checkoutWarning.classList.add("hidden");
@@ -182,10 +182,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    let current112Price = 8.00; 
+    let current112Price = 600; 
     function updateYieldPricing(zones) {
-        processYield("Section_112", 112, 8.00, zones);
-        processYield("Section_120", 120, 12.00, zones);
+        processYield("Section_112", 112, 600, zones);
+        processYield("Section_120", 120, 150, zones);
     }
 
     function processYield(zoneId, domId, basePrice, zones) {
@@ -199,18 +199,18 @@ document.addEventListener("DOMContentLoaded", () => {
         let computedPrice = basePrice;
         
         if (zoneData.waitTime < 5) {
-            computedPrice = basePrice * 0.75;
-            priceTxt.innerText = "$" + computedPrice.toFixed(2);
+            computedPrice = basePrice * 0.8;
+            priceTxt.innerText = "₹" + Math.round(computedPrice);
             priceTxt.classList.add("discount"); if (oldPriceTxt) oldPriceTxt.classList.remove("hidden");
             badge.style.background = "rgba(0, 230, 118, 0.2)"; badge.style.color = "var(--status-green)";
         } else if (zoneData.waitTime > 15) {
             computedPrice = basePrice;
-            priceTxt.innerText = "$" + computedPrice.toFixed(2);
+            priceTxt.innerText = "₹" + Math.round(computedPrice);
             priceTxt.classList.remove("discount"); if (oldPriceTxt) oldPriceTxt.classList.add("hidden");
             badge.style.background = "rgba(255, 23, 68, 0.2)"; badge.style.color = "var(--status-red)";
         } else {
             computedPrice = basePrice;
-            priceTxt.innerText = "$" + computedPrice.toFixed(2);
+            priceTxt.innerText = "₹" + Math.round(computedPrice);
             priceTxt.classList.remove("discount"); if (oldPriceTxt) oldPriceTxt.classList.add("hidden");
             badge.style.background = "rgba(254, 234, 0, 0.2)"; badge.style.color = "var(--status-yellow)";
         }
@@ -313,7 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
         checkoutBtn.addEventListener("click", async () => {
             const orderPayload = {
                 zoneId: "Section_112",
-                itemMenu: "Mega Hotdog",
+                itemMenu: "Wankhede Spicy Burger",
                 paidPrice: current112Price,
                 offlineMesh: !isOnline
             };

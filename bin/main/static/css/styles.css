@@ -9,6 +9,9 @@
     --status-yellow: #ffea00;
     --status-red: #ff1744;
     --status-purple: #b388ff;
+    --coldplay-pink: #ff4081;
+    --coldplay-yellow: #fdd835;
+    --coldplay-blue: #2196f3;
     --sidebar-width: 260px;
 }
 
@@ -89,12 +92,13 @@ body.force-mobile .view-toggle-btn { margin-top: 0; }
 }
 
 .sidebar-logo {
-    font-size: 24px;
-    font-weight: 800;
+    font-size: 26px;
+    font-weight: 900;
     margin-bottom: 50px;
-    background: linear-gradient(90deg, #fff, var(--accent-blue));
+    background: linear-gradient(90deg, #fff, var(--status-purple), var(--accent-blue));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
 }
 
 .sidebar-links {
@@ -134,7 +138,13 @@ body.force-mobile .view-toggle-btn { margin-top: 0; }
     align-items: center;
     z-index: 100;
 }
-.app-header h1 { font-size: 26px; font-weight: 800; }
+.app-header h1 { 
+    font-size: 26px; 
+    font-weight: 900; 
+    background: linear-gradient(90deg, var(--coldplay-pink), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 .header-right { display: flex; align-items: center; gap: 20px; }
 
 /* CONTENT AREA */
@@ -365,4 +375,37 @@ h2 { font-size: 18px; color: var(--text-muted); margin: 30px 0 20px 0; text-tran
 }
 .ar-btn:hover {
     transform: scale(1.05); box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+}
+
+/* StadiumPulse Special Descriptive Helpers */
+.mesh-hint {
+    font-size: 10px;
+    color: var(--status-yellow);
+    opacity: 0.9;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+}
+.mesh-hint::before {
+    content: 'ℹ️';
+    font-size: 8px;
+}
+
+.stat-card .stat-label {
+    color: var(--coldplay-pink);
+    font-weight: 600;
+}
+
+.price-current {
+    color: var(--status-green);
+    text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}
+
+.app-header p {
+    color: var(--status-purple);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }

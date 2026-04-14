@@ -68,7 +68,7 @@ public class GeminiService {
 
         // 4. FALLBACK
         else {
-            response = "I am the StadiumFlow Assistant. You can ask me about any Gate (A, C), any Food Section (112, 120), or ask for a 'Status Report' on the whole stadium!";
+            response = "I am the StadiumPulse Concert Concierge. You can ask me about entry gates, hydration points, or 'eco-deals' at our Food Villages for the Coldplay Music of the Spheres tour!";
         }
 
         return Map.of(
