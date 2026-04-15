@@ -88,7 +88,8 @@ public class GeminiService {
             try {
                 return processWithVertexAI(rawQuery);
             } catch (Exception e) {
-                log.warn("Vertex AI call failed, using fallback: {}", e.getMessage());
+                log.error("❌ Vertex AI API call FAILED. Error type: {}, Message: {}",
+                          e.getClass().getName(), e.getMessage(), e);
                 // Fall through to rule-based logic
             }
         }
