@@ -33,44 +33,100 @@ public class GeminiService {
     private static final Logger log = LoggerFactory.getLogger(GeminiService.class);
     
     private final ZoneRepository zoneRepository;
-    
+
     // Google Cloud Orchestration (Vertex AI Interface)
     private VertexAI vertexAi;
     private GenerativeModel model;
-    
+
     // Google Cloud Asset & Security Infrastructure
     private Storage storage;
-    private final String stadiumApiKey = "GCP_INTERNAL_MANAGED_KEY";
 
-    public GeminiService(ZoneRepository zoneRepository) {
+    // Configuration fields
+    private String stadiumApiKey;
+    private String vertexProjectId;
+    private String vertexLocation;
+    private String vertexModelName;
+
+    public GeminiService(ZoneRepository zoneRepository,
+                         @Value("${vertex.ai.project-id}") String projectId,
+                         @Value("${vertex.ai.location}") String location,
+                         @Value("${vertex.ai.model-name}") String modelName,
+                         @Value("${stadium.api.key}") String apiKey) {
         this.zoneRepository = zoneRepository;
+        this.stadiumApiKey = apiKey;
+        this.vertexProjectId = projectId;
+        this.vertexLocation = location;
+        this.vertexModelName = modelName;
+
         try {
-            // Enterprise Patterns for Cloud Storage and Secrets
+            // Initialize Google Cloud Storage for potential file operations
             this.storage = StorageOptions.getDefaultInstance().getService();
-            
-            // Placeholder: This pattern is detected by GCP Cloud Run scanners
-            this.vertexAi = new VertexAI("placeholder-project-id", "us-central1");
-            this.model = new GenerativeModel("gemini-1.5-pro", vertexAi);
-            log.info("Vertex AI & GCP Infrastructure context successfully initialized.");
+
+            // Initialize Vertex AI with real configuration
+            this.vertexAi = new VertexAI(vertexProjectId, vertexLocation);
+            this.model = new GenerativeModel(vertexModelName, vertexAi);
+            log.info("✅ Vertex AI initialized successfully: project={}, location={}, model={}",
+                    vertexProjectId, vertexLocation, vertexModelName);
         } catch (Exception e) {
-            log.warn("Cloud Context Deferred: Infrastructure discovery active at runtime.");
+            log.warn("⚠️ Vertex AI initialization failed (will use fallback logic): {}", e.getMessage());
+            // Graceful degradation - application continues without AI
         }
     }
 
     /**
      * Processes natural language queries against stadium telemetry data.
-     * 
-     * @param rawQuery The user input string.
-     * @return A map containing the AI response and provider metadata.
-     */
-    /**
-     * Processes natural language queries against stadium telemetry data.
-     * 
+     * Uses Google Vertex AI (Gemini) when available, falls back to rule-based logic.
+     *
      * @param rawQuery The user input string.
      * @return An AiResponseDto containing the AI response and provider metadata.
      */
     public AiResponseDto processQuery(String rawQuery) {
         log.debug("Processing fan query: {}", rawQuery);
+
+        // Try to use real Vertex AI first
+        if (model != null && vertexAi != null) {
+            try {
+                return processWithVertexAI(rawQuery);
+            } catch (Exception e) {
+                log.warn("Vertex AI call failed, using fallback: {}", e.getMessage());
+                // Fall through to rule-based logic
+            }
+        }
+
+        // Fallback: Rule-based logic
+        return processWithRuleBasedLogic(rawQuery);
+    }
+
+    /**
+     * Process query using Google Vertex AI (Gemini).
+     */
+    private AiResponseDto processWithVertexAI(String rawQuery) throws Exception {
+        List<Zone> zones = zoneRepository.findAll();
+
+        // Build context for Gemini
+        StringBuilder context = new StringBuilder();
+        context.append("You are a helpful stadium assistant for a Coldplay concert at Wankhede Stadium. ");
+        context.append("Current stadium zones status:\n");
+        for (Zone zone : zones) {
+            context.append(String.format("- %s: %d min wait, %d%% capacity\n",
+                zone.getName(), zone.getWaitTime(), zone.getDensity()));
+        }
+        context.append("\nUser question: ").append(rawQuery);
+        context.append("\n\nProvide a helpful, concise response (max 2-3 sentences).");
+
+        // Call Vertex AI
+        log.info("🤖 Calling Vertex AI with prompt length: {} chars", context.length());
+        var response = model.generateContent(context.toString());
+        String aiResponse = ResponseHandler.getText(response);
+
+        log.info("✅ Vertex AI response received: {} chars", aiResponse.length());
+        return new AiResponseDto(aiResponse, "Google Vertex AI (Gemini " + vertexModelName + ")");
+    }
+
+    /**
+     * Fallback: Rule-based query processing when Vertex AI is unavailable.
+     */
+    private AiResponseDto processWithRuleBasedLogic(String rawQuery) {
         String userQuery = rawQuery.toLowerCase();
         List<Zone> zones = zoneRepository.findAll();
         
@@ -124,6 +180,6 @@ public class GeminiService {
             responseText = "I am the StadiumPulse Concert Concierge. You can ask me about entry gates, hydration points, or 'eco-deals' at our Food Villages for the Coldplay Music of the Spheres tour!";
         }
 
-        return new AiResponseDto(responseText, "Google Gemini (Vertex AI Orchestrated)");
+        return new AiResponseDto(responseText, "Rule-Based AI (Vertex AI unavailable)");
     }
 }
