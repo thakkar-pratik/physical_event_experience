@@ -71,13 +71,12 @@ public class GeminiApiService {
             context.append("CURRENT REAL-TIME STADIUM DATA:\n");
 
             for (Zone zone : zones) {
-                int capacity = zone.getCapacity();
-                int current = zone.getCurrentCount();
+                int density = zone.getDensity();
                 int waitTime = zone.getWaitTime();
-                double utilization = capacity > 0 ? (current * 100.0 / capacity) : 0;
+                String crowdLevel = density < 20 ? "Light" : density < 40 ? "Moderate" : "Heavy";
 
-                context.append(String.format("- %s: %d/%d people (%.1f%% full), %d min wait\n",
-                    zone.getName(), current, capacity, utilization, waitTime));
+                context.append(String.format("- %s: %s crowd (density: %d%%), %d min wait\n",
+                    zone.getName(), crowdLevel, density, waitTime));
             }
 
             context.append("\nUSER QUERY: ").append(query);
