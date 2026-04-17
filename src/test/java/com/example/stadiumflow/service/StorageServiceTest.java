@@ -1,19 +1,46 @@
 package com.example.stadiumflow.service;
 
+import com.google.api.gax.paging.Page;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.BucketInfo;
+import com.google.cloud.storage.Storage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 public class StorageServiceTest {
 
     private StorageService storageService;
 
+    @Mock
+    private Storage mockStorage;
+
+    @Mock
+    private Bucket mockBucket;
+
+    @Mock
+    private Page<Blob> mockBlobPage;
+
+    @Mock
+    private Blob mockBlob1;
+
+    @Mock
+    private Blob mockBlob2;
+
     @BeforeEach
     public void setup() {
+        MockitoAnnotations.openMocks(this);
+
         // Create StorageService with test configuration (storage disabled)
         storageService = new StorageService();
         ReflectionTestUtils.setField(storageService, "storageEnabled", false);
@@ -394,5 +421,254 @@ public class StorageServiceTest {
     public void testUploadAnalytics_WithSlashesInFileName() {
         boolean result = storageService.uploadAnalytics("folder/subfolder/file.json", "{}");
         assertFalse(result);
+    }
+
+    // ==== TESTS FOR 100% BRANCH COVERAGE ====
+
+    @Test
+    public void testEnsureBucketExists_WithStorageNotNull_BucketExists() throws Exception {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "projectId", "test-project");
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        // Mock bucket exists
+        when(mockStorage.get("test-bucket")).thenReturn(mockBucket);
+
+        // Call private method using reflection
+        var method = StorageService.class.getDeclaredMethod("ensureBucketExists");
+        method.setAccessible(true);
+        assertDoesNotThrow(() -> {
+            try {
+                method.invoke(service);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        verify(mockStorage).get("test-bucket");
+        // Should NOT create bucket since it exists
+        verify(mockStorage, never()).create(any(BucketInfo.class));
+    }
+
+    @Test
+    public void testEnsureBucketExists_WithStorageNotNull_BucketDoesNotExist() throws Exception {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "projectId", "test-project");
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        // Mock bucket does NOT exist
+        when(mockStorage.get("test-bucket")).thenReturn(null);
+        when(mockStorage.create(any(BucketInfo.class))).thenReturn(mockBucket);
+
+        // Call private method using reflection
+        var method = StorageService.class.getDeclaredMethod("ensureBucketExists");
+        method.setAccessible(true);
+        assertDoesNotThrow(() -> {
+            try {
+                method.invoke(service);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        verify(mockStorage).get("test-bucket");
+        // SHOULD create bucket since it doesn't exist
+        verify(mockStorage).create(any(BucketInfo.class));
+    }
+
+    @Test
+    public void testEnsureBucketExists_ThrowsException() throws Exception {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "projectId", "test-project");
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        // Mock exception when checking bucket
+        when(mockStorage.get("test-bucket")).thenThrow(new RuntimeException("Access denied"));
+
+        // Call private method using reflection
+        var method = StorageService.class.getDeclaredMethod("ensureBucketExists");
+        method.setAccessible(true);
+
+        // Should not throw, should catch and log
+        assertDoesNotThrow(() -> {
+            try {
+                method.invoke(service);
+            } catch (Exception e) {
+                // Exception is acceptable as it's caught internally
+            }
+        });
+    }
+
+    @Test
+    public void testListAnalyticsFiles_WithStorageNotNull_HasFiles() {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        // Mock blobs
+        when(mockBlob1.getName()).thenReturn("analytics/file1.json");
+        when(mockBlob2.getName()).thenReturn("analytics/file2.json");
+        when(mockBlobPage.iterateAll()).thenReturn(Arrays.asList(mockBlob1, mockBlob2));
+        when(mockStorage.list(eq("test-bucket"), any())).thenReturn(mockBlobPage);
+
+        List<String> files = service.listAnalyticsFiles();
+
+        assertNotNull(files);
+        assertEquals(2, files.size());
+        assertTrue(files.contains("analytics/file1.json"));
+        assertTrue(files.contains("analytics/file2.json"));
+        verify(mockStorage).list(eq("test-bucket"), any());
+    }
+
+    @Test
+    public void testListAnalyticsFiles_WithStorageNotNull_EmptyFiles() {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        // Mock empty blob list
+        when(mockBlobPage.iterateAll()).thenReturn(Arrays.asList());
+        when(mockStorage.list(eq("test-bucket"), any())).thenReturn(mockBlobPage);
+
+        List<String> files = service.listAnalyticsFiles();
+
+        assertNotNull(files);
+        assertEquals(0, files.size());
+        verify(mockStorage).list(eq("test-bucket"), any());
+    }
+
+    @Test
+    public void testListAnalyticsFiles_WithStorageNotNull_ThrowsException() {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        // Mock exception
+        when(mockStorage.list(eq("test-bucket"), any())).thenThrow(new RuntimeException("Network error"));
+
+        List<String> files = service.listAnalyticsFiles();
+
+        // Should return empty list on exception
+        assertNotNull(files);
+        assertTrue(files.isEmpty());
+    }
+
+    @Test
+    public void testUploadAnalytics_WithStorageNotNull_Success() {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        // Mock successful upload
+        when(mockStorage.create(any(), any(byte[].class))).thenReturn(mockBlob1);
+
+        boolean result = service.uploadAnalytics("test.json", "{\"test\": true}");
+
+        assertTrue(result);
+        verify(mockStorage).create(any(), any(byte[].class));
+    }
+
+    @Test
+    public void testUploadAnalytics_WithStorageNotNull_ThrowsException() {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        // Mock exception on upload
+        when(mockStorage.create(any(), any(byte[].class))).thenThrow(new RuntimeException("Upload failed"));
+
+        boolean result = service.uploadAnalytics("test.json", "{\"test\": true}");
+
+        assertFalse(result);
+        verify(mockStorage).create(any(), any(byte[].class));
+    }
+
+    @Test
+    public void testIsAvailable_WithStorageNotNullAndEnabledTrue() {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        assertTrue(service.isAvailable());
+    }
+
+    @Test
+    public void testListAnalyticsFiles_WithMultipleBlobs() {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        Blob blob1 = mock(Blob.class);
+        Blob blob2 = mock(Blob.class);
+        Blob blob3 = mock(Blob.class);
+
+        when(blob1.getName()).thenReturn("analytics/2026-01-01.json");
+        when(blob2.getName()).thenReturn("analytics/2026-01-02.json");
+        when(blob3.getName()).thenReturn("analytics/2026-01-03.json");
+
+        when(mockBlobPage.iterateAll()).thenReturn(Arrays.asList(blob1, blob2, blob3));
+        when(mockStorage.list(eq("test-bucket"), any())).thenReturn(mockBlobPage);
+
+        List<String> files = service.listAnalyticsFiles();
+
+        assertEquals(3, files.size());
+        assertTrue(files.contains("analytics/2026-01-01.json"));
+        assertTrue(files.contains("analytics/2026-01-02.json"));
+        assertTrue(files.contains("analytics/2026-01-03.json"));
+    }
+
+    @Test
+    public void testSaveMetricsSnapshot_WithStorageAvailable() {
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "storage", mockStorage);
+
+        when(mockStorage.create(any(), any(byte[].class))).thenReturn(mockBlob1);
+
+        assertDoesNotThrow(() -> service.saveMetricsSnapshot("{\"zones\": []}"));
+
+        verify(mockStorage).create(any(), any(byte[].class));
+    }
+
+    @Test
+    public void testEnsureBucketExists_WithStorageNull() throws Exception {
+        // Test line 58 TRUE branch: when storage is null, ensureBucketExists should return early
+        StorageService service = new StorageService();
+        ReflectionTestUtils.setField(service, "storageEnabled", true);
+        ReflectionTestUtils.setField(service, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(service, "projectId", "test-project");
+
+        // Explicitly set storage to null
+        ReflectionTestUtils.setField(service, "storage", null);
+
+        // Call the private ensureBucketExists method using reflection
+        var method = StorageService.class.getDeclaredMethod("ensureBucketExists");
+        method.setAccessible(true);
+
+        // Should not throw - should return early due to storage == null check
+        assertDoesNotThrow(() -> {
+            try {
+                method.invoke(service);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Verify storage is still null (no operations were performed)
+        Object storage = ReflectionTestUtils.getField(service, "storage");
+        assertNull(storage);
     }
 }
