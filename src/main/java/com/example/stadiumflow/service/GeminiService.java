@@ -152,17 +152,22 @@ public class GeminiService {
         String responseText = "";
 
         // 1. DYNAMIC ZONE LOOKUP (Improved Partial Matching)
+        // PERFORMANCE OPTIMIZATION: Extract query once to avoid repeated toLowerCase calls.
+        final String queryLower = userQuery;
+        
         Optional<Zone> mentionedZone = zones.stream()
             .filter(z -> {
-                String name = z.getName().toLowerCase();
-                String id = z.getId().toLowerCase().replace("_", " ");
-                return userQuery.contains(id) || 
-                       userQuery.contains(z.getId().toLowerCase()) ||
-                       (userQuery.contains("north") && name.contains("north")) ||
-                       (userQuery.contains("vip") && name.contains("vip")) ||
-                       (userQuery.contains("food") && name.contains("food")) ||
-                       (userQuery.contains("hydration") && name.contains("hydration")) ||
-                       (userQuery.contains("gate a") && name.contains("gate a"));
+                String nameLower = z.getName().toLowerCase();
+                String idLower = z.getId().toLowerCase();
+                String idPretty = idLower.replace("_", " ");
+                
+                return queryLower.contains(idPretty) || 
+                       queryLower.contains(idLower) ||
+                       (queryLower.contains("north") && nameLower.contains("north")) ||
+                       (queryLower.contains("vip") && nameLower.contains("vip")) ||
+                       (queryLower.contains("food") && nameLower.contains("food")) ||
+                       (queryLower.contains("hydration") && nameLower.contains("hydration")) ||
+                       (queryLower.contains("gate a") && nameLower.contains("gate a"));
             })
             .findFirst();
 

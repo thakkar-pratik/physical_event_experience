@@ -51,9 +51,10 @@ public class IoTServiceTest {
         when(zoneRepository.findAll()).thenReturn(Arrays.asList(zone));
 
         ioTService.simulateSensorDataAndSaveToDB();
-
+        
+        // Updated for efficiency: verify saveAll is used once instead of individual saves in loop
         verify(zoneRepository, atLeastOnce()).findAll();
-        verify(zoneRepository, atLeastOnce()).save(any(Zone.class));
+        verify(zoneRepository, times(1)).saveAll(anyList());
     }
     
     @Test
@@ -64,9 +65,10 @@ public class IoTServiceTest {
         when(zoneRepository.findAll()).thenReturn(Arrays.asList(zone1, zone2, zone3));
 
         ioTService.simulateSensorDataAndSaveToDB();
-
-        verify(zoneRepository, atLeast(2)).findAll();
-        verify(zoneRepository, times(3)).save(any(Zone.class));
+        
+        // Updated for efficiency: verifying batch save
+        verify(zoneRepository, atLeast(1)).findAll();
+        verify(zoneRepository, times(1)).saveAll(anyList());
     }
 
     @Test
@@ -76,7 +78,7 @@ public class IoTServiceTest {
         ioTService.simulateSensorDataAndSaveToDB();
 
         verify(zoneRepository, atLeastOnce()).findAll();
-        verify(zoneRepository, never()).save(any(Zone.class));
+        verify(zoneRepository, never()).saveAll(anyList());
     }
 
     @Test
@@ -129,7 +131,7 @@ public class IoTServiceTest {
 
         ioTService.simulateSensorDataAndSaveToDB();
 
-        verify(zoneRepository, atLeastOnce()).save(any(Zone.class));
+        verify(zoneRepository, atLeastOnce()).saveAll(anyList());
     }
 
     @Test
@@ -140,8 +142,9 @@ public class IoTServiceTest {
         for (int i = 0; i < 5; i++) {
             ioTService.simulateSensorDataAndSaveToDB();
         }
-
-        verify(zoneRepository, atLeast(5)).save(any(Zone.class));
+        
+        // Updated for efficiency: verifying 5 batch saves across 5 calls
+        verify(zoneRepository, times(5)).saveAll(anyList());
     }
 
     @Test
@@ -176,7 +179,7 @@ public class IoTServiceTest {
             ioTService.simulateSensorDataAndSaveToDB();
         }
 
-        verify(zoneRepository, atLeast(10)).save(any(Zone.class));
+        verify(zoneRepository, atLeast(10)).saveAll(anyList());
     }
 
     @Test
@@ -187,6 +190,7 @@ public class IoTServiceTest {
         SseEmitter emitter = ioTService.registerClient();
 
         assertNotNull(emitter);
+        // registerClient still calls findAll for initial push
         verify(zoneRepository, atLeastOnce()).findAll();
     }
 
@@ -199,7 +203,7 @@ public class IoTServiceTest {
 
         ioTService.simulateSensorDataAndSaveToDB();
 
-        verify(zoneRepository, times(3)).save(any(Zone.class));
+        verify(zoneRepository, times(1)).saveAll(anyList());
     }
 
     @Test
@@ -282,9 +286,9 @@ public class IoTServiceTest {
         for (int i = 0; i < 20; i++) {
             ioTService.simulateSensorDataAndSaveToDB();
         }
-
-        // Verify saves were called many times
-        verify(zoneRepository, atLeast(40)).save(any(Zone.class));
+        
+        // Verify batch saves were called for each simulation
+        verify(zoneRepository, times(20)).saveAll(anyList());
     }
 
     @Test

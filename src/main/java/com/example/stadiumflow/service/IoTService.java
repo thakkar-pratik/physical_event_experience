@@ -19,6 +19,9 @@ public class IoTService {
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
     private final Random random = new Random();
 
+    // PERFORMANCE OPTIMIZATION: Cache the 2KB preamble to avoid repeated string allocation and loops.
+    private static final String SSE_PADDING = " ".repeat(2048);
+
     public IoTService(ZoneRepository zoneRepository) {
         this.zoneRepository = zoneRepository;
     }
@@ -37,10 +40,8 @@ public class IoTService {
         this.emitters.add(emitter);
         
         try {
-            // "MAX OUT" CLOUD FLUSHING: Send a 2KB preamble of comments.
-            StringBuilder padding = new StringBuilder();
-            for (int i = 0; i < 2048; i++) padding.append(" ");
-            emitter.send(SseEmitter.event().comment(padding.toString()));
+            // "MAX OUT" CLOUD FLUSHING: Use cached 2KB preamble of comments.
+            emitter.send(SseEmitter.event().comment(SSE_PADDING));
             
             // Immediate first data push
             emitter.send(SseEmitter.event().data(getAllZones()));
@@ -65,10 +66,13 @@ public class IoTService {
             int time = random.nextInt(30);
             if (time == 0) time = 1;
             zone.setWaitTime(time);
-            zoneRepository.save(zone); 
         }
 
-        broadcastData(zoneRepository.findAll());
+        // PERFORMANCE OPTIMIZATION: Only call saveAll if there are zones to update.
+        if (!zones.isEmpty()) {
+            List<Zone> updatedZones = zoneRepository.saveAll(zones);
+            broadcastData(updatedZones);
+        }
     }
 
     // Adding a 15-second heartbeat to keep Cloud Run CPU active during idle times

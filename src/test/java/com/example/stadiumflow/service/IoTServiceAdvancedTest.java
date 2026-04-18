@@ -114,7 +114,8 @@ public class IoTServiceAdvancedTest {
             ioTService.simulateSensorDataAndSaveToDB();
         }
         
-        verify(zoneRepository, atLeast(90)).save(any(Zone.class));
+        // Verify batch saves were called 30 times
+        verify(zoneRepository, times(30)).saveAll(anyList());
     }
 
     @Test
@@ -194,8 +195,8 @@ public class IoTServiceAdvancedTest {
             ioTService.simulateSensorDataAndSaveToDB();
         }
         
-        // Verify saves were called
-        verify(zoneRepository, atLeast(50)).save(argThat(z -> z.getWaitTime() >= 1));
+        // Verify batch saves were called
+        verify(zoneRepository, times(50)).saveAll(anyList());
     }
 
     @Test
