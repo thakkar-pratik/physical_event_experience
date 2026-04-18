@@ -21,7 +21,7 @@ import java.util.Map;
 @Service
 public class GeminiApiService {
 
-    private static final Logger logger = LoggerFactory.getLogger(GeminiApiService.class);
+    private static Logger logger = LoggerFactory.getLogger(GeminiApiService.class);
     // Using gemini-pro-latest - stable alias that always points to latest available pro model
     private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent";
 

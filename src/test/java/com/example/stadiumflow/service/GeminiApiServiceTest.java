@@ -15,9 +15,11 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-
+import java.lang.reflect.Field;
+import org.slf4j.Logger;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.mockito.MockedStatic;
 
 class GeminiApiServiceTest {
 
@@ -56,67 +58,36 @@ class GeminiApiServiceTest {
     }
 
     @Test
-    void testInitialize_CatchesException() {
-        // Test lines 50-51: exception catch block in initialize()
-        // The try block contains only simple string checks and logging, which won't naturally throw
-        // We need to force an exception using reflection or by breaking the normal flow
-
-        // Save the original logger to restore it later
-        org.slf4j.Logger originalLogger = null;
-
-        // Create a special service instance where we'll inject a problematic state
-        GeminiApiService testService = new GeminiApiService(null); // null repository to cause potential issues
-
-        // Make apiKey evaluation potentially problematic by using reflection
-        // to set it to a special object that breaks .isEmpty() or .equals()
+    void testInitialize_CatchesException() throws Exception {
+        // This test precisely triggers the catch block at GeminiApiService.java:50-52
+        
+        Logger mockLogger = mock(Logger.class);
+        // Setup mock to throw when warn() is called (happens if apiKey is null)
+        doThrow(new RuntimeException("Forced Logger Error")).when(mockLogger).warn(anyString());
+        
+        // Use reflection to swap the static logger (it is no longer final)
+        Field loggerField = GeminiApiService.class.getDeclaredField("logger");
+        loggerField.setAccessible(true);
+        
+        // Save original logger
+        Logger originalLogger = (Logger) loggerField.get(null);
+        
         try {
-            // Set apiKey to a non-null value to enter the if block
-            ReflectionTestUtils.setField(testService, "apiKey", "test-key");
-
-            // Get the logger field and replace it with a mock that throws
-            java.lang.reflect.Field loggerField = GeminiApiService.class.getDeclaredField("logger");
-            loggerField.setAccessible(true);
-
-            // Save the original logger
-            originalLogger = (org.slf4j.Logger) loggerField.get(null);
-
-            // Remove final modifier temporarily
-            java.lang.reflect.Field modifiersField = java.lang.reflect.Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(loggerField, loggerField.getModifiers() & ~java.lang.reflect.Modifier.FINAL);
-
-            // Create a mock logger that throws exception
-            org.slf4j.Logger mockLogger = mock(org.slf4j.Logger.class);
-            doThrow(new RuntimeException("Logger error")).when(mockLogger).info(anyString());
-
-            // Set the mock logger
+            // Swap to mock
             loggerField.set(null, mockLogger);
-
-            // Now call initialize - it should catch the exception
-            assertDoesNotThrow(() -> testService.initialize());
-
-            // Verify error was logged
-            verify(mockLogger).error(anyString(), anyString(), any(Exception.class));
-
-            // IMPORTANT: Restore the original logger to not affect other tests
+            
+            // Ensure apiKey is null to trigger logger.warn path
+            ReflectionTestUtils.setField(geminiApiService, "apiKey", null);
+            
+            // Execute - should catch the exception from mockLogger.warn()
+            assertDoesNotThrow(() -> geminiApiService.initialize());
+            
+            // Verify catch block (line 51) was executed
+            verify(mockLogger).error(contains("Failed to initialize Gemini API"), anyString(), any(Exception.class));
+            
+        } finally {
+            // RESTORE
             loggerField.set(null, originalLogger);
-
-        } catch (Exception e) {
-            // If reflection fails, that's okay - this is a difficult test to write
-            // The important thing is we tried to cover the exception path
-
-            // Try to restore the logger if we saved it
-            if (originalLogger != null) {
-                try {
-                    java.lang.reflect.Field loggerField = GeminiApiService.class.getDeclaredField("logger");
-                    loggerField.setAccessible(true);
-                    loggerField.set(null, originalLogger);
-                } catch (Exception restoreException) {
-                    // Ignore restore errors
-                }
-            }
-
-            assertTrue(true, "Reflection-based test encountered expected difficulties");
         }
     }
 
