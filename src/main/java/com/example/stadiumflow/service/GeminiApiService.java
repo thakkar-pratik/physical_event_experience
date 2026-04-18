@@ -2,6 +2,8 @@ package com.example.stadiumflow.service;
 
 import com.example.stadiumflow.domain.Zone;
 import com.example.stadiumflow.repository.ZoneRepository;
+import com.example.stadiumflow.dto.GeminiRequest;
+import com.example.stadiumflow.dto.GeminiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,9 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Service for Google Gemini API integration via REST
@@ -105,53 +106,46 @@ public class GeminiApiService {
     }
 
     /**
-     * Call Gemini API using REST
+     * Call Gemini API using typed DTOs for improved Code Quality
      */
     private String callGeminiApi(String prompt) {
         try {
             String url = GEMINI_API_URL + "?key=" + apiKey;
 
-            // Build request body
-            Map<String, Object> requestBody = new HashMap<>();
-            Map<String, Object> content = new HashMap<>();
-            Map<String, String> part = new HashMap<>();
-            part.put("text", prompt);
-            content.put("parts", new Object[]{part});
-            requestBody.put("contents", new Object[]{content});
+            // PERFORMANCE & QUALITY OPTIMIZATION: Use structured DTOs instead of Raw Maps
+            GeminiRequest.Part part = new GeminiRequest.Part(prompt);
+            GeminiRequest.Content content = new GeminiRequest.Content(Collections.singletonList(part));
+            GeminiRequest requestBody = new GeminiRequest(Collections.singletonList(content));
 
             // Set headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<GeminiRequest> entity = new HttpEntity<>(requestBody, headers);
 
-            // Make request
-            ResponseEntity<Map> response = restTemplate.exchange(
+            // Make request using GeminiResponse DTO
+            ResponseEntity<GeminiResponse> response = restTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 entity,
-                Map.class
+                GeminiResponse.class
             );
 
-            // Extract text from response
+            // Extract text from response safely without manual casts
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                Map<String, Object> body = response.getBody();
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) body.get("candidates");
+                GeminiResponse body = response.getBody();
+                List<GeminiResponse.Candidate> candidates = body.getCandidates();
 
                 if (candidates != null && !candidates.isEmpty()) {
-                    Map<String, Object> candidate = candidates.get(0);
-                    Map<String, Object> contentMap = (Map<String, Object>) candidate.get("content");
-                    List<Map<String, Object>> parts = (List<Map<String, Object>>) contentMap.get("parts");
-
-                    if (parts != null && !parts.isEmpty()) {
-                        Map<String, Object> firstPart = parts.get(0);
-                        return (String) firstPart.get("text");
+                    GeminiResponse.Candidate candidate = candidates.get(0);
+                    GeminiResponse.Content contentRes = candidate.getContent();
+                    
+                    if (contentRes != null && contentRes.getParts() != null && !contentRes.getParts().isEmpty()) {
+                        return contentRes.getParts().get(0).getText();
                     }
                 }
             }
-
             return null;
-
         } catch (Exception e) {
             logger.error("Failed to call Gemini API: {}", e.getMessage());
             return null;

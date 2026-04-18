@@ -2,6 +2,8 @@ package com.example.stadiumflow.service;
 
 import com.example.stadiumflow.domain.Zone;
 import com.example.stadiumflow.repository.ZoneRepository;
+import com.example.stadiumflow.dto.GeminiRequest;
+import com.example.stadiumflow.dto.GeminiResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -585,21 +587,17 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock successful API response
-        Map<String, Object> responseBody = new HashMap<>();
-        List<Map<String, Object>> candidates = new ArrayList<>();
-        Map<String, Object> candidate = new HashMap<>();
-        Map<String, Object> content = new HashMap<>();
-        List<Map<String, Object>> parts = new ArrayList<>();
-        Map<String, Object> part = new HashMap<>();
-        part.put("text", "The stadium is doing great!");
-        parts.add(part);
-        content.put("parts", parts);
-        candidate.put("content", content);
-        candidates.add(candidate);
-        responseBody.put("candidates", candidates);
+        GeminiResponse responseBody = new GeminiResponse();
+        GeminiResponse.Candidate candidate = new GeminiResponse.Candidate();
+        GeminiResponse.Content content = new GeminiResponse.Content();
+        GeminiResponse.Part part = new GeminiResponse.Part();
+        part.setText("The stadium is doing great!");
+        content.setParts(Collections.singletonList(part));
+        candidate.setContent(content);
+        responseBody.setCandidates(Collections.singletonList(candidate));
 
-        ResponseEntity<Map> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("What's the status?");
@@ -619,8 +617,8 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API response with non-OK status
-        ResponseEntity<Map> response = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
@@ -639,8 +637,8 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API response with null body
-        ResponseEntity<Map> response = new ResponseEntity<>(null, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(null, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
@@ -659,11 +657,11 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API response with null candidates
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("candidates", null);
+        GeminiResponse responseBody = new GeminiResponse();
+        responseBody.setCandidates(null);
 
-        ResponseEntity<Map> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
@@ -682,11 +680,11 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API response with empty candidates list
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("candidates", new ArrayList<>());
+        GeminiResponse responseBody = new GeminiResponse();
+        responseBody.setCandidates(new ArrayList<>());
 
-        ResponseEntity<Map> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
@@ -705,17 +703,15 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API response with null parts
-        Map<String, Object> responseBody = new HashMap<>();
-        List<Map<String, Object>> candidates = new ArrayList<>();
-        Map<String, Object> candidate = new HashMap<>();
-        Map<String, Object> content = new HashMap<>();
-        content.put("parts", null);
-        candidate.put("content", content);
-        candidates.add(candidate);
-        responseBody.put("candidates", candidates);
+        GeminiResponse responseBody = new GeminiResponse();
+        GeminiResponse.Candidate candidate = new GeminiResponse.Candidate();
+        GeminiResponse.Content contentRes = new GeminiResponse.Content();
+        contentRes.setParts(null);
+        candidate.setContent(contentRes);
+        responseBody.setCandidates(Collections.singletonList(candidate));
 
-        ResponseEntity<Map> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
@@ -734,17 +730,15 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API response with empty parts list
-        Map<String, Object> responseBody = new HashMap<>();
-        List<Map<String, Object>> candidates = new ArrayList<>();
-        Map<String, Object> candidate = new HashMap<>();
-        Map<String, Object> content = new HashMap<>();
-        content.put("parts", new ArrayList<>());
-        candidate.put("content", content);
-        candidates.add(candidate);
-        responseBody.put("candidates", candidates);
+        GeminiResponse responseBody = new GeminiResponse();
+        GeminiResponse.Candidate candidate = new GeminiResponse.Candidate();
+        GeminiResponse.Content contentRes = new GeminiResponse.Content();
+        contentRes.setParts(new ArrayList<>());
+        candidate.setContent(contentRes);
+        responseBody.setCandidates(Collections.singletonList(candidate));
 
-        ResponseEntity<Map> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
@@ -763,7 +757,7 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API call throwing exception
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenThrow(new RestClientException("Network error"));
 
         String result = geminiApiService.processWithGemini("status");
@@ -782,21 +776,17 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API response with empty text
-        Map<String, Object> responseBody = new HashMap<>();
-        List<Map<String, Object>> candidates = new ArrayList<>();
-        Map<String, Object> candidate = new HashMap<>();
-        Map<String, Object> content = new HashMap<>();
-        List<Map<String, Object>> parts = new ArrayList<>();
-        Map<String, Object> part = new HashMap<>();
-        part.put("text", "");  // Empty text
-        parts.add(part);
-        content.put("parts", parts);
-        candidate.put("content", content);
-        candidates.add(candidate);
-        responseBody.put("candidates", candidates);
+        GeminiResponse responseBody = new GeminiResponse();
+        GeminiResponse.Candidate candidate = new GeminiResponse.Candidate();
+        GeminiResponse.Content contentRes = new GeminiResponse.Content();
+        GeminiResponse.Part part = new GeminiResponse.Part();
+        part.setText("");  // Empty text
+        contentRes.setParts(Collections.singletonList(part));
+        candidate.setContent(contentRes);
+        responseBody.setCandidates(Collections.singletonList(candidate));
 
-        ResponseEntity<Map> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
@@ -815,21 +805,17 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API response with whitespace only
-        Map<String, Object> responseBody = new HashMap<>();
-        List<Map<String, Object>> candidates = new ArrayList<>();
-        Map<String, Object> candidate = new HashMap<>();
-        Map<String, Object> content = new HashMap<>();
-        List<Map<String, Object>> parts = new ArrayList<>();
-        Map<String, Object> part = new HashMap<>();
-        part.put("text", "   ");  // Whitespace only
-        parts.add(part);
-        content.put("parts", parts);
-        candidate.put("content", content);
-        candidates.add(candidate);
-        responseBody.put("candidates", candidates);
+        GeminiResponse responseBody = new GeminiResponse();
+        GeminiResponse.Candidate candidate = new GeminiResponse.Candidate();
+        GeminiResponse.Content contentRes = new GeminiResponse.Content();
+        GeminiResponse.Part part = new GeminiResponse.Part();
+        part.setText("   ");  // Whitespace only
+        contentRes.setParts(Collections.singletonList(part));
+        candidate.setContent(contentRes);
+        responseBody.setCandidates(Collections.singletonList(candidate));
 
-        ResponseEntity<Map> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
@@ -850,21 +836,17 @@ class GeminiApiServiceTest {
 
         // Mock API response with very long text
         String longText = "This is a very long response. ".repeat(100);
-        Map<String, Object> responseBody = new HashMap<>();
-        List<Map<String, Object>> candidates = new ArrayList<>();
-        Map<String, Object> candidate = new HashMap<>();
-        Map<String, Object> content = new HashMap<>();
-        List<Map<String, Object>> parts = new ArrayList<>();
-        Map<String, Object> part = new HashMap<>();
-        part.put("text", longText);
-        parts.add(part);
-        content.put("parts", parts);
-        candidate.put("content", content);
-        candidates.add(candidate);
-        responseBody.put("candidates", candidates);
+        GeminiResponse responseBody = new GeminiResponse();
+        GeminiResponse.Candidate candidate = new GeminiResponse.Candidate();
+        GeminiResponse.Content contentRes = new GeminiResponse.Content();
+        GeminiResponse.Part part = new GeminiResponse.Part();
+        part.setText(longText);
+        contentRes.setParts(Collections.singletonList(part));
+        candidate.setContent(contentRes);
+        responseBody.setCandidates(Collections.singletonList(candidate));
 
-        ResponseEntity<Map> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
@@ -884,35 +866,31 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API response with multiple candidates (should use first one)
-        Map<String, Object> responseBody = new HashMap<>();
-        List<Map<String, Object>> candidates = new ArrayList<>();
+        GeminiResponse responseBody = new GeminiResponse();
+        List<GeminiResponse.Candidate> candidates = new ArrayList<>();
 
         // First candidate
-        Map<String, Object> candidate1 = new HashMap<>();
-        Map<String, Object> content1 = new HashMap<>();
-        List<Map<String, Object>> parts1 = new ArrayList<>();
-        Map<String, Object> part1 = new HashMap<>();
-        part1.put("text", "First response");
-        parts1.add(part1);
-        content1.put("parts", parts1);
-        candidate1.put("content", content1);
+        GeminiResponse.Candidate candidate1 = new GeminiResponse.Candidate();
+        GeminiResponse.Content content1 = new GeminiResponse.Content();
+        GeminiResponse.Part part1 = new GeminiResponse.Part();
+        part1.setText("First response");
+        content1.setParts(Collections.singletonList(part1));
+        candidate1.setContent(content1);
         candidates.add(candidate1);
 
         // Second candidate (should be ignored)
-        Map<String, Object> candidate2 = new HashMap<>();
-        Map<String, Object> content2 = new HashMap<>();
-        List<Map<String, Object>> parts2 = new ArrayList<>();
-        Map<String, Object> part2 = new HashMap<>();
-        part2.put("text", "Second response");
-        parts2.add(part2);
-        content2.put("parts", parts2);
-        candidate2.put("content", content2);
+        GeminiResponse.Candidate candidate2 = new GeminiResponse.Candidate();
+        GeminiResponse.Content content2 = new GeminiResponse.Content();
+        GeminiResponse.Part part2 = new GeminiResponse.Part();
+        part2.setText("Second response");
+        content2.setParts(Collections.singletonList(part2));
+        candidate2.setContent(content2);
         candidates.add(candidate2);
 
-        responseBody.put("candidates", candidates);
+        responseBody.setCandidates(candidates);
 
-        ResponseEntity<Map> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
@@ -932,27 +910,25 @@ class GeminiApiServiceTest {
         when(zoneRepository.findAll()).thenReturn(zones);
 
         // Mock API response with multiple parts (should use first part)
-        Map<String, Object> responseBody = new HashMap<>();
-        List<Map<String, Object>> candidates = new ArrayList<>();
-        Map<String, Object> candidate = new HashMap<>();
-        Map<String, Object> content = new HashMap<>();
-        List<Map<String, Object>> parts = new ArrayList<>();
+        GeminiResponse responseBody = new GeminiResponse();
+        GeminiResponse.Candidate candidate = new GeminiResponse.Candidate();
+        GeminiResponse.Content contentRes = new GeminiResponse.Content();
+        List<GeminiResponse.Part> parts = new ArrayList<>();
 
-        Map<String, Object> part1 = new HashMap<>();
-        part1.put("text", "First part");
+        GeminiResponse.Part part1 = new GeminiResponse.Part();
+        part1.setText("First part");
         parts.add(part1);
 
-        Map<String, Object> part2 = new HashMap<>();
-        part2.put("text", "Second part");
+        GeminiResponse.Part part2 = new GeminiResponse.Part();
+        part2.setText("Second part");
         parts.add(part2);
 
-        content.put("parts", parts);
-        candidate.put("content", content);
-        candidates.add(candidate);
-        responseBody.put("candidates", candidates);
+        contentRes.setParts(parts);
+        candidate.setContent(contentRes);
+        responseBody.setCandidates(Collections.singletonList(candidate));
 
-        ResponseEntity<Map> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Map.class)))
+        ResponseEntity<GeminiResponse> response = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GeminiResponse.class)))
             .thenReturn(response);
 
         String result = geminiApiService.processWithGemini("status");
