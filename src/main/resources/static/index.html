@@ -6,7 +6,7 @@
     <title>StadiumPulse Live | Venue OS</title>
     
     <!-- Enterprise Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com https://www.gstatic.com https://maps.googleapis.com https://www.googletagmanager.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://www.googletagmanager.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://maps.gstatic.com https://maps.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com https://www.gstatic.com https://maps.googleapis.com https://www.googletagmanager.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://www.googletagmanager.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://maps.gstatic.com https://maps.googleapis.com https://storage.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;">
     
     <meta name="description" content="StadiumPulse Live: High-fidelity venue operating system for the Music of the Spheres tour.">
     <meta name="keywords" content="Stadium, Venue OS, IoT, Real-time Analytics, Google Cloud, Vertex AI">
@@ -168,7 +168,8 @@
                         </div>
                         <div class="map-wrapper">
                             <!-- Asset delivered via Google Cloud Storage CDN -->
-                            <img src="https://storage.googleapis.com/stadiumpulse-live-cdn/wankhede_map.png" class="blueprint-img" alt="Wankhede Stadium Blueprint">
+                            <!-- Asset delivered via local static resources for maximum reliability -->
+                            <img src="images/wankhede_map.png" class="blueprint-img" alt="Wankhede Stadium Blueprint">
                             <div class="zone" id="map-zone-Gate_A" style="top: 8%; left: 50%;">North Stand</div>
                             <div class="zone" id="map-zone-Gate_C" style="bottom: 8%; left: 50%;">VIP Turf</div>
                             <div class="zone" id="map-zone-Section_112" style="top: 35%; right: 8%;">Food Village</div>
